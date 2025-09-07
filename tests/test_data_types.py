@@ -8,8 +8,9 @@ from autocli import parse, AutoCLIArgs
 from autocli.parser import LLMParser
 
 
+@pytest.mark.slow
 class TestDataTypes:
-    """Test parsing of various data types."""
+    """Test parsing of various data types using real LLM."""
     
     def test_float_parsing(self):
         """Test that float values are correctly parsed."""
