@@ -42,10 +42,11 @@ args = autocli.parse(
 print(f"Hello, {args.name}{'!' * args.excitement}")
 ```
 
-## Format Flexibility
+## Format Flexibility & Type Intelligence
 
-The LLM understands **any reasonable CLI format** you throw at it. Mix and match styles - it just works!
+The LLM understands **any reasonable CLI format** and **intelligently infers data types** from context!
 
+### Mixed Syntax Styles
 ```python
 import autocli
 
@@ -66,19 +67,52 @@ args = autocli.parse("""
 # - verbose (boolean flag)
 ```
 
-### Even unconventional formats work:
+### Intelligent Type Inference
 
 ```python
+# The LLM automatically understands different data types
 args = autocli.parse("""
-    My database tool with weird syntax
+    Scientific tool with various data types
     
-    Usage: 
-        dbtool server=localhost port=5432 user='admin' verbose
-        dbtool --server:production --port:3306 user="root"
-        dbtool [server=staging, port=5432, user=deploy]
+    Examples:
+        $ analyze --threshold 3.14159 --iterations 1000 --verbose yes
+        $ analyze --ratio 0.5 --count 42 --debug true --days Mon,Wed,Fri
+        $ analyze threshold:2.71 iterations:500 verbose:1 days:[Monday,Friday]
 """)
 
-# The LLM understands the intent regardless of syntax!
+# Automatically infers:
+# - threshold: float (3.14159)
+# - iterations: integer (1000)
+# - verbose: boolean (yes/no, true/false, 1/0)
+# - days: list (comma-separated or bracket notation)
+```
+
+### Boolean Values - All Formats Understood
+```python
+# The LLM understands all common boolean representations
+args = autocli.parse("""
+    Build tool with boolean flags
+    
+    Examples:
+        $ build --optimize=true --debug=false    # true/false
+        $ build --compress=yes --verbose=no      # yes/no  
+        $ build --minify=1 --sourcemaps=0        # 1/0
+        $ build --production --no-warnings       # flag presence
+""")
+```
+
+### Lists and Collections
+```python
+# Various list formats are automatically recognized
+args = autocli.parse("""
+    Scheduler that accepts multiple values
+    
+    Examples:
+        $ schedule --days Monday,Tuesday,Wednesday,Thursday,Friday
+        $ schedule --days "Mon Tue Wed Thu Fri"
+        $ schedule --days=[Monday,Wednesday,Friday]
+        $ schedule --times 9:00,12:00,15:00,18:00
+""")
 ```
 
 ## Examples

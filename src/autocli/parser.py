@@ -45,10 +45,12 @@ Return a JSON object with these fields:
 - "named": dict of named arguments with their properties (type, default, required, short_flag, long_flag)
 - "description": brief app description
 
+For types, use: "int" for integers, "float" for decimals, "bool" for true/false/yes/no/1/0, "str" for text, "list" for comma-separated values.
+
 CLI Description:
 {description}
 
-Output the arguments as JSON:"""
+Extract all arguments from the examples and output as JSON:"""
         return prompt
     
     def parse_description(self, description: str) -> Dict[str, Any]:
@@ -91,31 +93,84 @@ Output the arguments as JSON:"""
         lines = description.strip().split('\n')
         result["description"] = lines[0] if lines else ""
         
-        example_pattern = r'\$\s*python\s+\S+\.py\s+(.*)'
-        flag_pattern = r'--?(\w+)(?:\s+(\w+))?'
+        # Match various command patterns
+        example_patterns = [
+            r'\$\s*\w+\s+(.*)',  # $ command args
+            r'^\s*\w+\s+(.*)',   # command args (no $)
+        ]
+        
+        # Extended patterns for different argument styles
+        arg_patterns = [
+            (r'--(\w[\w-]*)[=:]([^\s]+)', 2),   # --arg=value or --arg:value
+            (r'--(\w[\w-]*)\s+([^\s-]+)', 2),   # --arg value
+            (r'-(\w)\s+([^\s-]+)', 2),          # -a value  
+            (r'(\w+)[=:]([^\s,\]]+)', 2),       # arg=value or arg:value
+            (r'--(\w[\w-]*)', 1),               # --flag (boolean)
+            (r'-(\w)(?:\s|$)', 1),              # -f (boolean flag)
+        ]
         
         for line in lines:
-            example_match = re.search(example_pattern, line)
-            if example_match:
-                args_str = example_match.group(1)
+            # Try to find example lines
+            args_str = None
+            for pattern in example_patterns:
+                match = re.search(pattern, line)
+                if match:
+                    args_str = match.group(1)
+                    break
+            
+            if args_str:
+                # Extract named arguments
+                for pattern, groups in arg_patterns:
+                    matches = re.findall(pattern, args_str)
+                    for match in matches:
+                        if groups == 2:
+                            flag, value = match
+                            # Infer type from value
+                            arg_type = "str"
+                            if value.lower() in ['true', 'false', 'yes', 'no', '0', '1']:
+                                arg_type = "bool"
+                            elif '.' in value and value.replace('.', '').replace('-', '').isdigit():
+                                arg_type = "float"
+                            elif value.replace('-', '').isdigit():
+                                arg_type = "int"
+                            elif ',' in value or ' ' in value:
+                                arg_type = "list"
+                            
+                            if flag not in result["named"]:
+                                result["named"][flag] = {
+                                    "type": arg_type,
+                                    "default": None,
+                                    "required": False,
+                                    "long_flag": f"--{flag}" if len(flag) > 1 else None,
+                                    "short_flag": f"-{flag}" if len(flag) == 1 else None
+                                }
+                        elif groups == 1:
+                            flag = match
+                            if flag not in result["named"]:
+                                result["named"][flag] = {
+                                    "type": "bool",
+                                    "default": False,
+                                    "required": False,
+                                    "long_flag": f"--{flag}" if len(flag) > 1 else None,
+                                    "short_flag": f"-{flag}" if len(flag) == 1 else None
+                                }
                 
-                flags = re.findall(flag_pattern, args_str)
-                for flag, value in flags:
-                    if flag not in result["named"]:
-                        result["named"][flag] = {
-                            "type": "str",
-                            "default": None,
-                            "required": False,
-                            "long_flag": f"--{flag}",
-                            "short_flag": f"-{flag[0]}" if len(flag) > 1 else None
-                        }
+                # Look for positional arguments
+                # Remove all matched patterns
+                remaining = args_str
+                for pattern, _ in arg_patterns:
+                    remaining = re.sub(pattern, ' ', remaining)
                 
-                remaining = re.sub(flag_pattern, '', args_str).strip()
-                if remaining:
-                    positionals = remaining.split()
-                    for pos in positionals:
-                        if not pos.startswith('-') and pos not in result["positional"]:
-                            result["positional"].append(f"arg{len(result['positional'])}")
+                # Extract positional args (standalone numbers or words)
+                pos_args = remaining.split()
+                for pos in pos_args:
+                    pos = pos.strip(',[](){}"\'')
+                    if pos and not pos.startswith('-'):
+                        # Check if it's a value that looks positional
+                        if '=' not in pos and ':' not in pos:
+                            # Only add if it looks like a standalone positional arg
+                            if pos.replace('.', '').replace('-', '').isdigit():
+                                result["positional"].append(f"arg{len(result['positional'])}")
         
         return result
 
@@ -152,15 +207,23 @@ def parse(description: str, argv: Optional[List[str]] = None) -> AutoCLIArgs:
             help=f"Positional argument {i+1}"
         )
     
+    # Track used short flags to avoid conflicts
+    used_short_flags = {'-h'}  # Reserved for help
+    
     for arg_name, arg_spec in parsed_spec.get("named", {}).items():
         flags = []
-        if arg_spec.get("short_flag"):
-            # Avoid -h conflict with help
-            if arg_spec["short_flag"] != "-h":
-                flags.append(arg_spec["short_flag"])
+        
+        # Add long flag if available
         if arg_spec.get("long_flag"):
             flags.append(arg_spec["long_flag"])
         
+        # Add short flag if available and not conflicting
+        if arg_spec.get("short_flag"):
+            if arg_spec["short_flag"] not in used_short_flags:
+                flags.append(arg_spec["short_flag"])
+                used_short_flags.add(arg_spec["short_flag"])
+        
+        # Default to long flag if no flags set
         if not flags:
             flags = [f"--{arg_name}"]
         
@@ -168,8 +231,9 @@ def parse(description: str, argv: Optional[List[str]] = None) -> AutoCLIArgs:
         type_func = {
             "int": int,
             "float": float,
-            "bool": lambda x: x.lower() in ('true', '1', 'yes'),
-            "str": str
+            "bool": lambda x: str(x).lower() in ('true', '1', 'yes', 'y'),
+            "str": str,
+            "list": lambda x: x.split(',') if ',' in x else x.split()
         }.get(arg_type, str)
         
         parser.add_argument(
