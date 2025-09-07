@@ -15,8 +15,10 @@ Parse CLI arguments from natural language descriptions using small LLMs.
 ## Installation
 
 ```bash
-pip install autocli
+pip install autocli-llm
 ```
+
+Note: The package imports as `autocli` after installation.
 
 ## Quick Start
 
