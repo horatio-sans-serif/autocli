@@ -1,9 +1,10 @@
 # autocli
 
-Parse CLI arguments from natural language descriptions using small LLMs.
+Parse CLI arguments from natural language descriptions using small LLMs. Write your CLI examples in **any format** - the LLM understands them all!
 
 ## Features
 
+- **Flexible Input Format** - Understands any CLI syntax: `--name=value`, `-n value`, `name:value`, etc.
 - **100% Local** - No API calls, runs entirely offline on your machine
 - **Lightweight** - Flan-T5-small model (~250MB) runs on CPU, no GPU required
 - **One-time download** - Model downloads automatically on first use, then works offline forever
@@ -39,6 +40,45 @@ args = autocli.parse(
 )
 
 print(f"Hello, {args.name}{'!' * args.excitement}")
+```
+
+## Format Flexibility
+
+The LLM understands **any reasonable CLI format** you throw at it. Mix and match styles - it just works!
+
+```python
+import autocli
+
+# All of these formats work!
+args = autocli.parse("""
+    A config tool that accepts various argument formats
+    
+    Examples:
+        $ mytool --name="Alice" --age=30 --verbose
+        $ mytool name:Bob age:25 -v
+        $ mytool -n Charlie -a 35 --verbose=true
+        $ mytool --name David age 40
+""")
+
+# The LLM figures out that these all refer to the same arguments:
+# - name (string)
+# - age (number) 
+# - verbose (boolean flag)
+```
+
+### Even unconventional formats work:
+
+```python
+args = autocli.parse("""
+    My database tool with weird syntax
+    
+    Usage: 
+        dbtool server=localhost port=5432 user='admin' verbose
+        dbtool --server:production --port:3306 user="root"
+        dbtool [server=staging, port=5432, user=deploy]
+""")
+
+# The LLM understands the intent regardless of syntax!
 ```
 
 ## Examples
@@ -143,10 +183,11 @@ Greetings, Earthling!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## How It Works
 
-1. **Local LLM Parsing**: Uses Google's Flan-T5-small model running **entirely on your machine** - no API calls or internet connection required after initial download
-2. **Structured Output**: Converts natural language to structured argument specifications  
-3. **Automatic ArgParse**: Generates standard Python argparse configuration
-4. **NamedTuple-like Access**: Returns arguments as an object supporting both attribute and index access
+1. **Intelligent Parsing**: The LLM understands intent, not just syntax - it recognizes that `--name=foo`, `-n foo`, `name:foo`, and `name foo` all mean the same thing
+2. **Local LLM Processing**: Runs entirely on your machine - no API calls or internet connection required after initial download
+3. **Structured Output**: Converts any CLI format to structured argument specifications  
+4. **Automatic ArgParse**: Generates standard Python argparse configuration
+5. **NamedTuple-like Access**: Returns arguments as an object supporting both attribute and index access
 
 **Privacy First**: All processing happens locally on your device. Your code and CLI descriptions never leave your machine.
 
