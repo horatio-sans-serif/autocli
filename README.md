@@ -4,6 +4,7 @@ Parse CLI arguments from natural language descriptions using small LLMs.
 
 ## Features
 
+- **100% Local** - No API calls, runs entirely offline on your machine
 - Natural language CLI description parsing
 - Automatic argument type inference
 - Support for positional and named arguments
@@ -139,10 +140,12 @@ Greetings, Earthling!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## How It Works
 
-1. **LLM Parsing**: Uses Google's Flan-T5-small model to understand your CLI description
+1. **Local LLM Parsing**: Uses Google's Flan-T5-small model running **entirely on your machine** - no API calls or internet connection required
 2. **Structured Output**: Converts natural language to structured argument specifications
 3. **Automatic ArgParse**: Generates standard Python argparse configuration
 4. **NamedTuple-like Access**: Returns arguments as an object supporting both attribute and index access
+
+**Privacy First**: All processing happens locally on your device. Your code and CLI descriptions never leave your machine.
 
 ## Advanced Usage
 
