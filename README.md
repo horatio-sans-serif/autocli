@@ -1,5 +1,10 @@
 # autocli
 
+[![PyPI version](https://badge.fury.io/py/autocli-llm.svg)](https://badge.fury.io/py/autocli-llm)
+[![Python Versions](https://img.shields.io/pypi/pyversions/autocli-llm.svg)](https://pypi.org/project/autocli-llm/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://static.pepy.tech/badge/autocli-llm)](https://pepy.tech/project/autocli-llm)
+
 Parse CLI arguments from natural language descriptions using small LLMs. Write your CLI examples in **any format** - the LLM understands them all!
 
 ## Features
