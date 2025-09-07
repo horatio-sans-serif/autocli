@@ -5,11 +5,12 @@ Parse CLI arguments from natural language descriptions using small LLMs.
 ## Features
 
 - **100% Local** - No API calls, runs entirely offline on your machine
+- **Lightweight** - Flan-T5-small model (~250MB) runs on CPU, no GPU required
+- **One-time download** - Model downloads automatically on first use, then works offline forever
 - Natural language CLI description parsing
 - Automatic argument type inference
 - Support for positional and named arguments
 - Built-in help generation
-- Small, efficient LLM (Flan-T5-small, ~250MB)
 - Fallback regex parser for reliability
 - Returns arguments as NamedTuple-like objects
 
@@ -20,6 +21,8 @@ pip install autocli-llm
 ```
 
 Note: The package imports as `autocli` after installation.
+
+**First Run**: On first use, the package will automatically download the Flan-T5-small model (~250MB) from HuggingFace. This requires an internet connection but only happens once - the model is cached locally for all future use.
 
 ## Quick Start
 
@@ -140,12 +143,14 @@ Greetings, Earthling!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## How It Works
 
-1. **Local LLM Parsing**: Uses Google's Flan-T5-small model running **entirely on your machine** - no API calls or internet connection required
-2. **Structured Output**: Converts natural language to structured argument specifications
+1. **Local LLM Parsing**: Uses Google's Flan-T5-small model running **entirely on your machine** - no API calls or internet connection required after initial download
+2. **Structured Output**: Converts natural language to structured argument specifications  
 3. **Automatic ArgParse**: Generates standard Python argparse configuration
 4. **NamedTuple-like Access**: Returns arguments as an object supporting both attribute and index access
 
 **Privacy First**: All processing happens locally on your device. Your code and CLI descriptions never leave your machine.
+
+**Performance**: The small model (~250MB) runs efficiently on CPU - no GPU required. Works on laptops, desktops, and even resource-constrained environments.
 
 ## Advanced Usage
 
@@ -175,8 +180,10 @@ print(args[1])  # Second positional arg
 ## Requirements
 
 - Python 3.8+
-- PyTorch 2.0+
+- PyTorch 2.0+ (CPU version is sufficient)
 - Transformers 4.30+
+- ~250MB disk space for model cache
+- Internet connection (first run only, for model download)
 
 ## License
 
